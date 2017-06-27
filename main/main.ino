@@ -34,7 +34,7 @@ void setup() {
 
 void loop() {
 
-  readPot();
+  //readPot();
   //readPiezo();
   //checkSwitch();
   delay(100);
