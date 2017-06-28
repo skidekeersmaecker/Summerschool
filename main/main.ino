@@ -29,41 +29,85 @@ const int potPin = A2;
 int potVal = 0;
 
 //camera
-int cameraFocus = 0;
-int cameraTrigger = 0;
-int flash = 0;
+const int cameraFocus = 10;
+const int cameraTrigger = 9;
+const int flash = 8;
+
+//syncing
+boolean receivedNothing = true;
+const int slave1 = 2;
+const int slave2 = 3;
+
+boolean slave1Ready = false;
+boolean slave2Ready = false;
+boolean isRising = false;
 
 void setup() {
   Serial.begin(9600);
 
+  initializeComponents();
   ledOnSetup();
- 
+  //interrupt
   PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
   PCMSK0 |= (1 << PCINT3);
   sei();
-  
+
+  attachInterrupt(digitalPinToInterrupt(slave1), slave1Change, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(slave2), slave2Change, CHANGE);
 }
 
 void loop() {
 
-  
-  
+  //triggerCamera();
   //readPhoto();
   //readPot();
   //readPiezo();
-  //checkSwitch();
+  checkSwitch();
   //Serial.println(buttonState);
-  delay(100);
+  delay(3000);
+}
+
+void slave1Change(){
+  isRising = !isRising;
+  if(isRising){
+    slave1Ready = true;
+    Serial.println("slave1 in");
+    if(slave2Ready)
+      triggerCamera();
+  }
+  else{
+    slave1Ready = false;
+    Serial.println("slave1 out");
+  }
+}
+
+void slave2Change(){
+  isRising = !isRising;
+  if(isRising){
+    slave2Ready = true;
+    Serial.println("slave2 in");
+    if(slave1Ready)
+      triggerCamera();
+  }
+  else{
+    slave2Ready = false;
+    Serial.println("slave2 out");
+  }
+}
+
+void triggerCamera() {
+  digitalWrite(cameraTrigger, HIGH);
+  delay(5);
+  digitalWrite(cameraTrigger, LOW);
 }
 
 volatile int lastButtonState;
 ISR(PCINT0_vect) {
   int x = (PINB >> PINB3) & 0x1;
-  Serial.println(x);
   if (x != lastButtonState) {
     if ((millis() - lastDebounceTime) > debounceDelay) {
-      Serial.println("pressed");
-      
+      Serial.println("FOtO");
+      triggerCamera();
       digitalWrite(led2, not led2State);
       delay(200);
       digitalWrite(led2, led2State);
@@ -117,12 +161,14 @@ void checkSwitch() {
   if (switchState == HIGH) {
     led1State = HIGH;
     digitalWrite(led1, led1State);
-    Serial.println("switch is HIGH");
+    //Serial.println("switch is HIGH");
+    digitalWrite(cameraFocus, HIGH);
   }
   else {
-    Serial.println("switch is LOW");
+    //Serial.println("switch is LOW");
     led1State = LOW;
     digitalWrite(led1, led1State);
+    digitalWrite(cameraFocus, LOW);
   }
 }
 
@@ -131,26 +177,33 @@ void hit() {
   Serial.print("pressed");
 }
 
-void ledOnSetup(){
+void initializeComponents() {
   pinMode(buttonPin, INPUT_PULLUP);
   pinMode(switchPin, INPUT);
   pinMode(led1, OUTPUT);
   pinMode(led2, OUTPUT);
+  pinMode(cameraFocus, OUTPUT);
+  pinMode(cameraTrigger, OUTPUT);
+  pinMode(flash, OUTPUT);
+  pinMode(slave1, INPUT);
+}
+
+void ledOnSetup() {
   digitalWrite(led1, led1State);
   digitalWrite(led2, led2State);
-  delay(500);
+  delay(250);
   digitalWrite(led1, !led1State);
   digitalWrite(led2, !led2State);
-  delay(500);
+  delay(250);
   digitalWrite(led1, led1State);
   digitalWrite(led2, led2State);
-  delay(500);
+  delay(250);
   digitalWrite(led1, !led1State);
   digitalWrite(led2, !led2State);
-  delay(500);
+  delay(250);
   digitalWrite(led1, led1State);
   digitalWrite(led2, led2State);
-  delay(500);
+  delay(250);
   led1State = LOW;
   led2State = LOW;
   digitalWrite(led1, led1State);
