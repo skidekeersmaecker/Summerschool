@@ -6,8 +6,8 @@ const int led2 = 7;
 
 int buttonState = 0;
 int switchState = 0;
-int led1State = LOW;
-int led2State = LOW;
+int led1State = HIGH;
+int led2State = HIGH;
 //debounce on button
 long lastDebounceTime = 0;
 long debounceDelay = 200;
@@ -28,23 +28,26 @@ const int potPin = A2;
 
 int potVal = 0;
 
+//camera
+int cameraFocus = 0;
+int cameraTrigger = 0;
+int flash = 0;
+
 void setup() {
   Serial.begin(9600);
 
-  pinMode(buttonPin, INPUT_PULLUP);
-  pinMode(switchPin, INPUT);
-  pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);
-  digitalWrite(led1, led1State);
-  digitalWrite(led2, led2State);
+  ledOnSetup();
+ 
   PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
   PCMSK0 |= (1 << PCINT3);
   sei();
-  //attachInterrupt(digitalPinToInterrupt(buttonPin), hit, RISING);
+  
 }
 
 void loop() {
 
+  
+  
   //readPhoto();
   //readPot();
   //readPiezo();
@@ -126,6 +129,32 @@ void checkSwitch() {
 void hit() {
   buttonState = !buttonState;
   Serial.print("pressed");
+}
+
+void ledOnSetup(){
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(switchPin, INPUT);
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  digitalWrite(led1, led1State);
+  digitalWrite(led2, led2State);
+  delay(500);
+  digitalWrite(led1, !led1State);
+  digitalWrite(led2, !led2State);
+  delay(500);
+  digitalWrite(led1, led1State);
+  digitalWrite(led2, led2State);
+  delay(500);
+  digitalWrite(led1, !led1State);
+  digitalWrite(led2, !led2State);
+  delay(500);
+  digitalWrite(led1, led1State);
+  digitalWrite(led2, led2State);
+  delay(500);
+  led1State = LOW;
+  led2State = LOW;
+  digitalWrite(led1, led1State);
+  digitalWrite(led2, led2State);
 }
 
 
