@@ -50,10 +50,9 @@ void setup() {
 }
 
 void loop() {
-
-  if(digitalRead(slave1) && digitalRead(slave2)){
-    //triggerCamera();
-    Serial.print("TRIGGER");
+  checkSwitch();
+  if (digitalRead(slave1) && digitalRead(slave2)) {
+    triggerCamera();
   }
   //triggerCamera();
   //readPhoto();
