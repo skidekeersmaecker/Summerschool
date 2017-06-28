@@ -38,67 +38,36 @@ boolean receivedNothing = true;
 const int slave1 = 2;
 const int slave2 = 3;
 
-boolean slave1Ready = false;
-boolean slave2Ready = false;
-boolean isRising = false;
-
 void setup() {
   Serial.begin(9600);
 
   initializeComponents();
   ledOnSetup();
   //interrupt
-  PCICR |= (1 << PCIE0);    // set PCIE0 to enable PCMSK0 scan
+  PCICR |= (1 << PCIE0);
   PCMSK0 |= (1 << PCINT3);
   sei();
-
-  attachInterrupt(digitalPinToInterrupt(slave1), slave1Change, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(slave2), slave2Change, CHANGE);
 }
 
 void loop() {
 
+  if(digitalRead(slave1) && digitalRead(slave2)){
+    //triggerCamera();
+    Serial.print("TRIGGER");
+  }
   //triggerCamera();
   //readPhoto();
   //readPot();
   //readPiezo();
-  checkSwitch();
-  //Serial.println(buttonState);
-  delay(3000);
-}
-
-void slave1Change(){
-  isRising = !isRising;
-  if(isRising){
-    slave1Ready = true;
-    Serial.println("slave1 in");
-    if(slave2Ready)
-      triggerCamera();
-  }
-  else{
-    slave1Ready = false;
-    Serial.println("slave1 out");
-  }
-}
-
-void slave2Change(){
-  isRising = !isRising;
-  if(isRising){
-    slave2Ready = true;
-    Serial.println("slave2 in");
-    if(slave1Ready)
-      triggerCamera();
-  }
-  else{
-    slave2Ready = false;
-    Serial.println("slave2 out");
-  }
+  //checkSwitch();
+  //delay(3000);
 }
 
 void triggerCamera() {
   digitalWrite(cameraTrigger, HIGH);
   delay(5);
   digitalWrite(cameraTrigger, LOW);
+  Serial.println("FOTO");
 }
 
 volatile int lastButtonState;
@@ -106,7 +75,6 @@ ISR(PCINT0_vect) {
   int x = (PINB >> PINB3) & 0x1;
   if (x != lastButtonState) {
     if ((millis() - lastDebounceTime) > debounceDelay) {
-      Serial.println("FOtO");
       triggerCamera();
       digitalWrite(led2, not led2State);
       delay(200);
@@ -186,6 +154,7 @@ void initializeComponents() {
   pinMode(cameraTrigger, OUTPUT);
   pinMode(flash, OUTPUT);
   pinMode(slave1, INPUT);
+  pinMode(slave2, INPUT);
 }
 
 void ledOnSetup() {
