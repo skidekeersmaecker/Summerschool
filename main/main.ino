@@ -14,14 +14,17 @@ long debounceDelay = 200;
 
 //Piezo element
 const int piezoPin = A0;
-const int piezoThreshold = 100;
+const int piezoThreshold = 1000;
 
 int sensorPiezo = 0;
+boolean piezoActive = false;
 
 //photocell
 const int photoPin = A1;
 const int photoSensorMin = 0;
 const int photoSensorMax = 600;
+
+boolean photoActive = false;
 
 //potentiometer
 const int potPin = A2;
@@ -38,6 +41,12 @@ boolean receivedNothing = true;
 const int slave1 = 2;
 const int slave2 = 3;
 
+boolean slave1Active = false;
+long slave1Prev = 0;
+boolean slave2Active = false;
+long slave2Prev = 0;
+int slaveDelay = 1000;
+
 void setup() {
   Serial.begin(9600);
 
@@ -50,8 +59,34 @@ void setup() {
 }
 
 void loop() {
+  readPiezo();
+  readPhoto();
   checkSwitch();
-  if (digitalRead(slave1) && digitalRead(slave2)) {
+
+  Serial.print("piezo: ");
+  Serial.print(piezoActive);
+  Serial.print(", photo: ");
+  Serial.print(photoActive);
+  Serial.print(", slave1: ");
+  Serial.print(digitalRead(slave1));
+  Serial.print(", slave2: ");
+  Serial.println(digitalRead(slave2));
+
+  if (digitalRead(slave1) == HIGH) {
+    slave1Active = true;
+    slave1Prev = millis();
+  }
+  if (digitalRead(slave2) == HIGH) {
+    slave2Active = true;
+    slave2Prev = millis();
+  }
+  if (millis() - slave1Prev > slaveDelay){
+    slave1Active = false;
+  }
+  if (millis() - slave2Prev > slaveDelay){
+    slave2Active = false;
+  }
+  if (digitalRead(slave1) && digitalRead(slave2) && piezoActive && photoActive) {
     triggerCamera();
   }
   //triggerCamera();
@@ -87,19 +122,23 @@ ISR(PCINT0_vect) {
 void readPhoto() {
   int sensorPhoto = analogRead(photoPin);
   int rangePhoto = map(sensorPhoto, photoSensorMin, photoSensorMax, 0, 3);
-  Serial.println(rangePhoto);
+  //Serial.println(rangePhoto);
   switch (rangePhoto) {
     case 0:
-      Serial.println("dark");
+      //Serial.println("dark");
+      photoActive = false;
       break;
     case 1:
-      Serial.println("dim");
+      //Serial.println("dim");
+      photoActive = false;
       break;
     case 2:
-      Serial.println("medium");
+      //Serial.println("medium");
+      photoActive = false;
       break;
     case 3:
-      Serial.println("bright");
+      //Serial.println("bright");
+      photoActive = true;
       break;
   }
 }
@@ -114,12 +153,15 @@ void readPot() {
 
 void readPiezo() {
   sensorPiezo = analogRead(piezoPin);
-  Serial.println(sensorPiezo);
+  //Serial.println(sensorPiezo);
 
-  if (sensorPiezo >= piezoThreshold) {
+  if (sensorPiezo <= piezoThreshold) {
+    piezoActive = true;
     led1State = !led1State;
     digitalWrite(led1, led1State);
-    Serial.println("Knock");
+    //Serial.println("Knock");
+  } else {
+    piezoActive = false;
   }
 }
 
